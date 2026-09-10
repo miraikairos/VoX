@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Test audio files
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.webm
+
+# Old ML files
+*.pth
+*.pt
+trained_models/
+models/
