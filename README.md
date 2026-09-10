@@ -1,158 +1,219 @@
-# AASIST
+# VOX — AI Voice Deepfake Detection
 
-This repository provides the overall framework for training and evaluating audio anti-spoofing systems proposed in ['AASIST: Audio Anti-Spoofing using Integrated Spectro-Temporal Graph Attention Networks'](https://arxiv.org/abs/2110.01200)
+VOX is an AI-powered voice authenticity detection platform designed to identify whether an audio sample is **genuine human speech or potentially AI-generated/voice-cloned speech**.
 
-### Getting started
-`requirements.txt` must be installed for execution. We state our experiment environment for those who prefer to simulate as similar as possible. 
-- Installing dependencies
+## Features
+
+- 🎙️ **Browser Voice Recording** — Record audio directly from the browser.
+- 📁 **Audio Upload** — Upload an existing audio file for analysis.
+- 🤖 **AI-Based Detection** — Uses a deep-learning audio classification model to analyze voice authenticity.
+- 📊 **Confidence Scores** — Displays genuine and spoof probabilities.
+- ⚡ **Fast API-Based Inference** — Audio is processed through a FastAPI backend.
+- 🔒 **Temporary Audio Processing** — Uploaded audio is temporarily stored for inference and removed afterward.
+- 🌐 **Web-Based Interface** — Simple interface accessible through a browser.
+
+## How It Works
+
+```text
+User
+ │
+ ├── Upload Audio
+ │       OR
+ └── Record Voice
+          │
+          ▼
+     VOX Frontend
+          │
+          ▼
+     FastAPI Backend
+          │
+          ▼
+   Deepfake Detection Model
+          │
+          ▼
+ Genuine / Spoof Prediction
+          │
+          ▼
+    Confidence Scores
+          │
+          ▼
+     VOX Frontend
 ```
+
+## AI Model
+
+VOX integrates the **`Shanmugapriya6/voice-fake-detector-v1`** deep-learning model.
+
+The model is based on:
+
+```text
+facebook/wav2vec2-xls-r-300m
+```
+
+It performs binary audio classification to distinguish between genuine and spoofed/AI-generated speech.
+
+The model is loaded through the Hugging Face Transformers library and performs inference locally through the Python backend.
+
+## Technology Stack
+
+### Frontend
+
+- HTML
+- CSS
+- JavaScript
+- Browser MediaRecorder API
+
+### Backend
+
+- Python
+- FastAPI
+- Uvicorn
+- PyTorch
+- Hugging Face Transformers
+
+### Model
+
+- Wav2Vec2 XLS-R
+- Audio Classification
+- Voice Deepfake Detection
+
+### Deployment / Testing
+
+- GitHub
+- Netlify
+- Cloudflare Tunnel
+
+## Project Structure
+
+```text
+VOX/
+│
+├── backend/
+│   ├── ai-service/
+│   │   ├── app.py
+│   │   ├── audio.py
+│   │   ├── Dockerfile
+│   │   ├── requirements.txt
+│   │   └── .gitignore
+│   │
+│   ├── app.js
+│   ├── package.json
+│   └── package-lock.json
+│
+├── index.html
+├── dd.html
+│
+├── main.py
+├── predict.py
+├── train.py
+├── evaluation.py
+├── data_utils.py
+├── utils.py
+│
+├── test_model.py
+├── test_voice_detector.py
+│
+├── requirements.txt
+├── README.md
+└── LICENSE
+```
+
+## Running the AI Backend Locally
+
+Navigate to the AI service:
+
+```bash
+cd backend/ai-service
+```
+
+Create a virtual environment:
+
+```bash
+python -m venv venv
+```
+
+Activate it on Windows:
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
-- Our environment (for GPU training)
-  - Based on a docker image: `pytorch:1.6.0-cuda10.1-cudnn7-runtime`
-  - GPU: 1 NVIDIA Tesla V100
-    - About 16GB is required to train AASIST using a batch size of 24
-  - gpu-driver: 418.67
 
-### Data preparation
-We train/validate/evaluate AASIST using the ASVspoof 2019 logical access dataset [4].
-```
-python ./download_dataset.py
-```
-(Alternative) Manual preparation is available via 
-- ASVspoof2019 dataset: https://datashare.ed.ac.uk/handle/10283/3336
-  1. Download `LA.zip` and unzip it
-  2. Set your dataset directory in the configuration file
+Start the FastAPI server:
 
-### Training 
-The `main.py` includes train/validation/evaluation.
-
-To train AASIST [1]:
-```
-python main.py --config ./config/AASIST.conf
-```
-To train AASIST-L [1]:
-```
-python main.py --config ./config/AASIST-L.conf
+```bash
+python -m uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-#### Training baselines
+The API will be available at:
 
-We additionally enabled the training of RawNet2[2] and RawGAT-ST[3]. 
-
-To Train RawNet2 [2]:
-```
-python main.py --config ./config/RawNet2_baseline.conf
+```text
+http://localhost:8000
 ```
 
-To train RawGAT-ST [3]:
-```
-python main.py --config ./config/RawGATST_baseline.conf
-```
+## API
 
-### Pre-trained models
-We provide pre-trained AASIST and AASIST-L.
+### Health Check
 
-To evaluate AASIST [1]:
-- It shows `EER: 0.83%`, `min t-DCF: 0.0275`
-```
-python main.py --eval --config ./config/AASIST.conf
-```
-To evaluate AASIST-L [1]:
-- It shows `EER: 0.99%`, `min t-DCF: 0.0309`
-- Model has `85,306` parameters
-```
-python main.py --eval --config ./config/AASIST-L.conf
+```http
+GET /health
 ```
 
+### Voice Prediction
 
-### Developing custom models
-Simply by adding a configuration file and a model architecture, one can train and evaluate their models.
-
-To train a custom model:
-```
-1. Define your model
-  - The model should be a class named "Model"
-2. Make a configuration by modifying "model_config"
-  - architecture: filename of your model.
-  - hyper-parameters to be tuned can be also passed using variables in "model_config"
-3. run python main.py --config {CUSTOM_CONFIG_NAME}
+```http
+POST /predict
 ```
 
-### License
-```
-Copyright (c) 2021-present NAVER Corp.
+The endpoint accepts an audio file and returns a prediction containing:
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-```
-
-### Acknowledgements
-This repository is built on top of several open source projects. 
-- [ASVspoof 2021 baseline repo](https://github.com/asvspoof-challenge/2021/tree/main/LA/Baseline-RawNet2)
-- [min t-DCF implementation](https://www.asvspoof.org/resources/tDCF_python_v2.zip)
-
-The repository for baseline RawGAT-ST model will be open
--  https://github.com/eurecom-asp/RawGAT-ST-antispoofing
-
-The dataset we use is ASVspoof 2019 [4]
-- https://www.asvspoof.org/index2019.html
-
-### References
-[1] AASIST: Audio Anti-Spoofing using Integrated Spectro-Temporal Graph Attention Networks
-```bibtex
-@INPROCEEDINGS{Jung2021AASIST,
-  author={Jung, Jee-weon and Heo, Hee-Soo and Tak, Hemlata and Shim, Hye-jin and Chung, Joon Son and Lee, Bong-Jin and Yu, Ha-Jin and Evans, Nicholas},
-  booktitle={arXiv preprint arXiv:2110.01200}, 
-  title={AASIST: Audio Anti-Spoofing using Integrated Spectro-Temporal Graph Attention Networks}, 
-  year={2021}
-```
-
-[2] End-to-End anti-spoofing with RawNet2
-```bibtex
-@INPROCEEDINGS{Tak2021End,
-  author={Tak, Hemlata and Patino, Jose and Todisco, Massimiliano and Nautsch, Andreas and Evans, Nicholas and Larcher, Anthony},
-  booktitle={Proc. ICASSP}, 
-  title={End-to-End anti-spoofing with RawNet2}, 
-  year={2021},
-  pages={6369-6373}
+```json
+{
+  "success": true,
+  "filename": "audio.wav",
+  "prediction": "genuine",
+  "confidence": 99.99,
+  "spoof_probability": 0.01,
+  "genuine_probability": 99.99
 }
 ```
 
-[3] End-to-end spectro-temporal graph attention networks for speaker verification anti-spoofing and speech deepfake detection
-```bibtex
-@inproceedings{tak21_asvspoof,
-  author={Tak, Hemlata and Jung, Jee-weon and Patino, Jose and Kamble, Madhu and Todisco, Massimiliano and Evans, Nicholas},
-  booktitle={Proc. ASVSpoof Challenge},
-  title={End-to-end spectro-temporal graph attention networks for speaker verification anti-spoofing and speech deepfake detection},
-  year={2021},
-  pages={1--8}
-```
+## Privacy
 
-[4] ASVspoof 2019: A large-scale public database of synthesized, converted and replayed speech
-```bibtex
-@article{wang2020asvspoof,
-  title={ASVspoof 2019: A large-scale public database of synthesized, converted and replayed speech},
-  author={Wang, Xin and Yamagishi, Junichi and Todisco, Massimiliano and Delgado, H{\'e}ctor and Nautsch, Andreas and Evans, Nicholas and Sahidullah, Md and Vestman, Ville and Kinnunen, Tomi and Lee, Kong Aik and others},
-  journal={Computer Speech \& Language},
-  volume={64},
-  pages={101114},
-  year={2020},
-  publisher={Elsevier}
-}
-```
+Audio files are temporarily stored during processing and deleted after inference. VOX does not need to permanently store uploaded voice recordings for the detection process.
+
+## Limitations
+
+Voice deepfake detection performance can vary depending on:
+
+- Audio quality
+- Background noise
+- Recording conditions
+- Language and accent
+- Compression and audio format
+- Type of voice-generation technology used
+
+The system should therefore be treated as a **detection aid**, not as definitive forensic or legal evidence.
+
+## Future Scope
+
+- Real-time voice deepfake detection
+- Improved multilingual detection
+- Detection of newer voice-cloning techniques
+- Advanced audio preprocessing
+- Model fine-tuning with larger and more diverse datasets
+- Cloud-based scalable inference
+- Browser and mobile integration
+
+## Disclaimer
+
+VOX is an experimental AI-based voice authenticity detection system developed for educational, research, and demonstration purposes. Detection results should not be considered definitive proof of authenticity or manipulation.
+
+## License
+
+This project is intended for educational and research purposes.
